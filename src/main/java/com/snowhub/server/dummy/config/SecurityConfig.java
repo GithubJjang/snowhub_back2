@@ -20,7 +20,7 @@ import org.springframework.web.cors.CorsUtils;
 
 @AllArgsConstructor
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity //(debug = true)
 public class SecurityConfig {
    private final CustomUserDetailsService customUserDetailsService;
    private final UserService userService;
@@ -31,7 +31,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .httpBasic(basic -> basic.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))//
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())//Csrf 안씀.
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))// Session 안씀.
                 .formLogin(login -> login.disable())
@@ -60,7 +60,8 @@ public class SecurityConfig {
 
     @Bean WebSecurityCustomizer webSecurityCustomizer(){
         return web -> web.ignoring()
-                .requestMatchers("/auth/**")
+                .requestMatchers("/auth/**")// swagger를 사용할 경우에만 모든 /**, 안하면 토큰 오류가 발생함.
+
                 ;
     }
 

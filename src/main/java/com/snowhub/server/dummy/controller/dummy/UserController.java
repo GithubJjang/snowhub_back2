@@ -26,7 +26,7 @@ import java.util.Map;
 
 @Slf4j
 @AllArgsConstructor
-@Controller
+//@Controller
 public class UserController {
 
     private final UserService userService;

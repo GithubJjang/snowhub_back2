@@ -19,11 +19,28 @@ public class Reply { // Reply : Board = N : 1
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY) // 수정
     private Board board;
 
     private String reply;
 
     @CreationTimestamp
     private Timestamp createDate; // 작성일
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @Builder
+    public static class DAO{
+
+        public DAO(){
+
+        }
+        private int id;
+        private Board board;
+        private String content;;//댓글 내용
+        private Timestamp createDate;//작성일
+
+        private String name;//댓글 작성자
+    }
 }

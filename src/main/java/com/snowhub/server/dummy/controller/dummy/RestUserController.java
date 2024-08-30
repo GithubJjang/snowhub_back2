@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @AllArgsConstructor
-@RestController
+//@RestController
 public class RestUserController {
     private final FirebaseAuth firebaseAuth;
     private final UserService userService;

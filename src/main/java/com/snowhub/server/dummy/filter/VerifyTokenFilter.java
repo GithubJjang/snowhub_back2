@@ -43,6 +43,7 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Start verify tokens");
+        log.info("==================== Current Request: "+request.getRequestURI());
         
         // 브라우저 쿠키에서 토큰 추출
         String getAccessToken = request.getHeader(HttpHeaders.AUTHORIZATION);

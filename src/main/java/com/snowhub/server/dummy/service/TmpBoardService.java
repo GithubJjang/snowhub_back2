@@ -65,7 +65,11 @@ public class TmpBoardService {
 
     @Transactional
     public TmpBoard getTmpBoard(HttpServletRequest request){
+        // email로 User를 찾는다 -> tmpBoard를 찾는다.
+        // 근데 이거를 join으로 하나로 줄일 수 있음. 그렇게 하려면 email 컬럼을 tmpboard에 추가를 해야하는데
+        // 만약 email을 바꾸면 DISK I/O가 발생함.
 
+        // 쿼리 2방 보낼까 아니면, DISK I/O 감수하고 1방 보낼까(Email 고칠 확률이 매우 작긴함.)
         Firebase firebase = Firebase.getInstance();
         String email = firebase.getEmail(request);
 

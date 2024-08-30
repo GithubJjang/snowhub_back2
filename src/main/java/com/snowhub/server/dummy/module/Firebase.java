@@ -104,8 +104,10 @@ public class Firebase {
 
             if(e.getMessage().equals(ErrorType.Token_Expiration.getValue()) && RefreshToken!=null ){
                 // RefreshToken 로직으로 넘어가기 위해서 일부러 비워둠.
+
             }
             else{
+                // 브라우저로 에러 던짐.
                 handleException(response,e);
                 return;
 

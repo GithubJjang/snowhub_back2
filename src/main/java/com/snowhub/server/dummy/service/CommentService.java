@@ -1,6 +1,5 @@
 package com.snowhub.server.dummy.service;
 
-import com.snowhub.server.dummy.dao.CommentFetcher;
 import com.snowhub.server.dummy.dto.comment.CommentParam;
 import com.snowhub.server.dummy.model.Comment;
 import com.snowhub.server.dummy.model.Reply;
@@ -11,7 +10,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -42,19 +40,35 @@ public class CommentService {
     }
 
     // 2. 특정 reply에 대한 comment 가져오기
-    public List<CommentFetcher> getComment(Reply reply){
+    public List<Comment.DAO> getComment(Reply reply){
+
+        // Stream <Comment>
+        return commentRepo.findByReply(reply).stream()
+                .map((e)->
+                    Comment.DAO.builder()
+                            .id(e.getId())
+                            .comment(e.getComment())
+                            .build()
+                )
+                .toList()
+        ;
+
+    }
+}
+
+
+// getComment
+        /*
         List<Comment> commentList = commentRepo.findByReply(reply);
 
-        List<CommentFetcher> returnComments = new ArrayList<>();
+        List<Comment.DAO> returnComments = new ArrayList<>();
 
         // DTO LIST로 만들기
         for(Comment c: commentList){
-            CommentFetcher commentFetcher = new CommentFetcher();
+            Comment.DAO commentFetcher = new Comment.DAO();
             commentFetcher.setId(c.getId());
             commentFetcher.setComment(c.getComment());
             returnComments.add(commentFetcher);
         }
 
-        return returnComments;
-    }
-}
+         */
