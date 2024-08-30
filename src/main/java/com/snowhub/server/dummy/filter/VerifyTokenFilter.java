@@ -43,6 +43,7 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("Start verify tokens");
+        log.info("==================== Current Request: "+request.getRequestURI());
         
         // 브라우저 쿠키에서 토큰 추출
         String getAccessToken = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -53,12 +54,15 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
 
         // 1. firebase토큰인지 확인을 한다.
         Firebase firebase = Firebase.getInstance();
+
+        // 사용할때마다 계속해서 Service를 Param으로 보내는 방법은 좀 아닌듯하다.
+        // 그래서, firebase를 일반 클래스가 아닌 빈으로 등록하는 방법을 고려해보자.
         firebase.setCustomUserDetailsService(customUserDetailsService,userService);
         firebase.verifyToken(request,response,accessToken,refreshToken,filterChain);
 
     }
 
-    public String getBearer(String getToken){
+    protected String getBearer(String getToken){
 
         if (getToken != null && getToken.startsWith("Bearer ")) {
             return getToken.substring(7); // Extracting the token after "Bearer "

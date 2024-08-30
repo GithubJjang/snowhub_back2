@@ -52,7 +52,7 @@ public class User {
 
     // User는 TmpBoard에 자신의 글을 임시 저장을 할 수 있다.
     // Join을 안하면 select 2번, 하면 1번
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY) // 수정부분(단방향으로 하자. 굳이 TmpBoard가  User를 조회할 필요가 있을까?)
     @JoinColumn(name = "tmpboard_id")
     private TmpBoard tmpBoard;
 

@@ -1,37 +1,34 @@
 package com.snowhub.server.dummy.controller;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.snowhub.server.dummy.dto.board.BoardParam;
-import com.snowhub.server.dummy.dto.board.BoardListDTO;
-import com.snowhub.server.dummy.dto.reply.Board_ReplyDTO;
-import com.snowhub.server.dummy.dto.reply.BoardDetail_ReplyDTO;
-import com.snowhub.server.dummy.model.Board;
+import com.snowhub.server.dummy.dto.board.TmpBoardParam;
 
 import com.snowhub.server.dummy.model.TmpBoard;
-import com.snowhub.server.dummy.model.User;
 import com.snowhub.server.dummy.repository.BoardRepo;
-import com.snowhub.server.dummy.repository.UserRepo;
 import com.snowhub.server.dummy.service.BoardService;
 import com.snowhub.server.dummy.service.ReplyService;
 import com.snowhub.server.dummy.service.TmpBoardService;
 import com.google.gson.Gson;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import static com.snowhub.server.dummy.model.QBoard.board;
 
 
 @Slf4j
-@AllArgsConstructor
+//@AllArgsConstructor <- JPAQueryFactory를 빈등록이 된 줄 알고 가져오려고 함. 그래서 어노테이션이 아닌 생성자 주입방식을 적용.
 @RestController
+@Tag(name = "게시글 관련 API", description = "게시글 작성/현재 작성중인 게시글 임시저장 및 불러오기/전체게시글 불러오기/게시글 상세보기/")
 public class BoardController {
 
     // 생성자 주입 방식.
@@ -40,9 +37,25 @@ public class BoardController {
     private final TmpBoardService tmpBoardService;
 
     private final BoardRepo boardRepo;
-    private final UserRepo userRepo;
+
+    // Querydsl
+    private final EntityManager em;
+
+    public BoardController(BoardService boardService, ReplyService replyService, TmpBoardService tmpBoardService
+    ,EntityManager entityManager, BoardRepo boardRepo){
+        this.boardService=boardService;
+        this.replyService=replyService;
+        this.tmpBoardService=tmpBoardService;
+        this.em=entityManager;
+
+        this.boardRepo = boardRepo;
+    }
+
+    private JPAQueryFactory queryFactory;// final 잡으면 em을 파라미터로 넣을 수 없다.
 
 
+    //private BoardRepo boardRepo;
+    @Operation(summary = "게시글 작성", description = "현재 게시글을 작성합니다.")
     @PostMapping("/board/write")
     public ResponseEntity<?> boardWrite(@Valid @RequestBody BoardParam boardDTO,
                                         HttpServletRequest request) {
@@ -51,133 +64,134 @@ public class BoardController {
         return boardService.saveBoard(boardDTO,request);
     }
 
+    // - 게시글 임시 저장하기
+    @Operation(summary = "게시글 임시저장",description = "현재 작성중인 게시글을 임시저장합니다.")
     @PostMapping("/board/tmp")
-    public ResponseEntity<?> boardTmpSave(@RequestBody TmpBoard tmpBoard, HttpServletRequest request){
+    public ResponseEntity<?> boardTmpSave(@RequestBody TmpBoardParam tmpBoardParam, HttpServletRequest request){
         // 임시저장을 하는데, 굳이 검사를 할 필요가 없다.
-        return tmpBoardService.saveTmpBoard(tmpBoard,request);
+        return tmpBoardService.saveTmpBoard(tmpBoardParam,request);
 
     }
 
+    // - 임시 저장된 게시글 불러오기
+    @Operation(summary = "임시저장 게시글 불러오기",description = "임시저장한 게시글을 불러옵니다.")
     @GetMapping("/board/tmp")
     public TmpBoard getTmpBoard(HttpServletRequest request){
         return tmpBoardService.getTmpBoard(request);
     }
 
+    // - 게시글 불러오기
+    @Operation(summary = "전체 게시글 불러오기",description = "전체 게시글을 불러옵니다.") //<- 수정요구 DISK I/O 발생 많이 한다.
     @GetMapping("/board/list")
     public ResponseEntity<?> boardList(@RequestParam int page,@RequestParam String category){
 
-        List<BoardListDTO> boardListPack = new ArrayList<>();
-        //
-        PageRequest pageRequest=null;
-        Page<Board> getPages = null;
-        if(category.equals("all")){
-            pageRequest = PageRequest.of(page,16, Sort.by("id").ascending());
-            getPages = boardRepo.findAll(pageRequest);
-        }
-        else{
-            pageRequest = PageRequest.of(page,16, Sort.by("id").ascending());
-            getPages = boardRepo.findByCategory(category,pageRequest);
-
-        }
-
-        //PageRequest pageRequest2 = PageRequest.of(page,16);
-        //Page<Board> tester = boardRepo.findByCategory("Season",pageRequest2);
-
-
-
-        Iterator<Board> iterator = getPages.iterator();
-        while(iterator.hasNext()){
-           Board rawBoard = iterator.next();
-           BoardListDTO boardList = BoardListDTO.builder()
-                   .id(rawBoard.getId())
-                   .category(rawBoard.getCategory())
-                   .title(rawBoard.getTitle())
-                   .writer(rawBoard.getUser().getDisplayName())
-                   .count(rawBoard.getCount())
-                   .createDate(rawBoard.getCreateDate())
-                   .build();
-            boardListPack.add(boardList);
-        }
-
-        // 게시판 전체 페이지를 넣기 위한 Dummy Data
-        BoardListDTO totalPageDTO = new BoardListDTO();
-        totalPageDTO.setId(getPages.getTotalPages());
-        totalPageDTO.setTitle(getPages.getTotalPages()+"");
-
-        boardListPack.add(totalPageDTO);
-
-
-        // BoardDTO를 생성하지 않은 경우 -> StackOverFlow 발생.
-        // 이유: json 내 obj 무한 참조.
-
-        //
-        String json = new Gson().toJson(boardListPack);
+        String json = new Gson().toJson(boardService.getMultiBoard(category,page));
 
         return ResponseEntity.ok(json);
+
     }
 
     // /board/detail/{id} <- @PathVariable String id로 받기
+    @Operation(summary = "게시글 상세보기",description = "하나의 게시글을 선택하여, 자세한 내용을 불러옵니다.( 게시글+댓글 )")
     @GetMapping("/board/detail")
     public ResponseEntity<?> boardDetail(@RequestParam(name = "id") int boardId,
                                          @RequestParam(name = "number")int number){
 
-
-        BoardListDTO board = boardService.getBoard(boardId);// 이거 안하면 Json으로 인해서 StackOverFlow 발생
-        List<BoardDetail_ReplyDTO> reply = replyService.getReply(boardId);// 마찬가지이유.
-
-        // Board와 Reply를 동시에 반환을 한다.
-        Board_ReplyDTO boardReplyDTO = new Board_ReplyDTO();
-        boardReplyDTO.setBoardDTO(board);
-        boardReplyDTO.setReplyDTO(reply);
-
-        //Board의 count +1을 한다.
-        /*
-            중복 랜더링 때문에...
-            중복조회를 막기 위해서는 추후에 Redis를 활용할 것!
-            쿠키를 이용할 경우, detail 들어갈 때마다 계속 1일로 초기화가 된다. 그러면 언제 만료가 되려나?
-        */
-        if(number==1){
-            boardService.updateCount(boardId);
-        }
-
-        return ResponseEntity.ok(boardReplyDTO);// body T에는 board Entity가 들어가야.
+        return ResponseEntity.ok(boardService.getSingleBoard(boardId,number));// body T에는 board Entity가 들어가야.
     }
 
-    @GetMapping("/dummy/check")
-    public String doCheck(){
-       List<User> users= userRepo.findAll();
-       User user = users.get(0);
-       List<Board> boardList = user.getBoardList();
-       for(Board b: boardList){
-           System.out.println("user: "+b.getUser().getEmail());
-           System.out.println("board: "+b.getTitle());
-       }
+    private BooleanExpression categoryuEq(String categoryCond) {
 
-       return "OK";
+        return categoryCond.equals("all") ? null : board.category.eq(categoryCond);
     }
-
-    @GetMapping("/dummy/board")
-    public void fillDummyBoard(){
-
-        User findUser = userRepo.findByEmail("tarto123z@gmail.com");
-        for(int i=0; i<100; i++){
-            Board board = new Board();
-
-
-            board.setUser(findUser);
-            board.setTitle("dummy"+i);
-            board.setContent("test");
-            board.setCategory("Season");
-
-            boardRepo.save(board);
-        }
-
-    }
-
 }
 
 /*
 1. RequestBody는 multipart/form-data를 json으로 전송해도 excpetion 발생 -> @RequestParam("image") MultipartFile file
    Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'multipart/form-data;boundary=----WebKitFormBoundary7bFMK5q5ziAvA0tq;charset=UTF-8' not supported ]
+
+*/
+
+
+// API: /board/list
+   /*
+
+
+        log.info("Here1");
+        System.out.println("category: "+category);
+        Page<Board> pages;
+        if(category.equals("all")){
+            // 카테고리 구분없이 id 오름차순으로 가져오기 <- 가장 최신순으로
+            pages = boardRepo.findAll(PageRequest.of(page,16, Sort.by("createDate").descending()));
+        }
+        else{
+            // 카테고리 별로 + id 오름차순으로 가져오기 <- 가장 최신순으로
+            pages = boardRepo.findByCategory(category,PageRequest.of(page,16, Sort.by("createDate").descending()));
+        }
+        log.info("Here2");
+        List<BoardFetcher> returnBoards = new ArrayList<>(pages.stream()
+                .map(   // param = Board, return BoadListDTO
+                        (e) -> BoardFetcher.builder()
+                                .id(e.getId())
+                                .category(e.getCategory())
+                                .title(e.getTitle())
+                                .writer(e.getUser().getDisplayName())
+                                .count(e.getCount())
+                                .createDate(e.getCreateDate())
+                                .build()
+                )
+                .toList())
+        ;
+        log.info("Here3");
+        // 전체 페이지 개수
+        BoardFetcher pageSizeEntity = new BoardFetcher();
+        pageSizeEntity.setId(pages.getTotalPages());
+        pageSizeEntity.setTitle(pages.getTotalPages()+"");
+
+        returnBoards.add(pageSizeEntity);
+
+        String json = new Gson().toJson(returnBoards);
+
+        return ResponseEntity.ok(json);
+
+     */
+
+// API: /board/detail
+/*
+        //BoardFetcher fetchBoard = boardService.getBoard(boardId);// 이거 안하면 Json으로 인해서 StackOverFlow 발생
+
+
+
+        /*
+        queryFactory = new JPAQueryFactory(em);
+
+        // board를 1건으로 줄인 후, user와 join
+        Board findBoard = queryFactory.selectFrom(board)
+                .join(board.user,user).fetchJoin()
+                .where(board.id.eq(boardId))
+                .fetchOne();
+
+        BoardFetcher boardFetcher =  BoardFetcher.builder()
+                .id(findBoard.getId())
+                //.count(board.getCount()) 추후에 추가할 예정
+                .title(findBoard.getTitle())
+                .content(findBoard.getContent())
+                .writer(findBoard.getUser().getDisplayName())
+                .category(findBoard.getCategory())
+                .createDate(findBoard.getCreateDate())
+                .build();
+
+        System.out.println("==========(1)");
+        List<ReplyFetcher> fetchReplies = replyService.getReply(boardId);// 마찬가지이유.
+        System.out.println("==========(2)");
+
+        // Board와 Reply를 동시에 반환을 한다.
+        BoardWithReplies boardWithRepliesDTO = new BoardWithReplies();
+        boardWithRepliesDTO.setBoardDTO(boardFetcher);
+        boardWithRepliesDTO.setReplyDTO(fetchReplies);
+
+        if(number==1){
+            boardService.updateCount(boardId);
+        }
 
 */

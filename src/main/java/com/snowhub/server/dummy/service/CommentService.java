@@ -1,17 +1,15 @@
 package com.snowhub.server.dummy.service;
 
-import com.snowhub.server.dummy.dto.comment.CommentDTO;
+import com.snowhub.server.dummy.dto.comment.CommentParam;
 import com.snowhub.server.dummy.model.Comment;
 import com.snowhub.server.dummy.model.Reply;
 import com.snowhub.server.dummy.repository.CommentRepo;
 import com.snowhub.server.dummy.repository.ReplyRepo;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -22,7 +20,7 @@ public class CommentService {
 
     // 1.Comment등록하기
     @Transactional
-    public ResponseEntity<?> saveComment(CommentDTO commentDTO, int replyId){
+    public ResponseEntity<?> saveComment(CommentParam commentParam, int replyId){
         // save comment, dirty checking about reply
 
         // Reply 찾기
@@ -32,7 +30,7 @@ public class CommentService {
 
         // Comment 객체 생성
         Comment comment = new Comment();
-        comment.setComment(commentDTO.getComment());
+        comment.setComment(commentParam.getComment());
         comment.setReply(reply);
 
         commentRepo.save(comment);
@@ -42,19 +40,35 @@ public class CommentService {
     }
 
     // 2. 특정 reply에 대한 comment 가져오기
-    public List<CommentDTO> getComment(Reply reply){
-        List<Comment> comment = commentRepo.findByReply(reply);
+    public List<Comment.DAO> getComment(Reply reply){
 
-        List<CommentDTO> returnValue = new ArrayList<>();
+        // Stream <Comment>
+        return commentRepo.findByReply(reply).stream()
+                .map((e)->
+                    Comment.DAO.builder()
+                            .id(e.getId())
+                            .comment(e.getComment())
+                            .build()
+                )
+                .toList()
+        ;
 
-        // DTO LIST로 만들기
-        for(Comment c: comment){
-            CommentDTO commentDTO = new CommentDTO();
-            commentDTO.setId(c.getId());
-            commentDTO.setComment(c.getComment());
-            returnValue.add(commentDTO);
-        }
-
-        return returnValue;
     }
 }
+
+
+// getComment
+        /*
+        List<Comment> commentList = commentRepo.findByReply(reply);
+
+        List<Comment.DAO> returnComments = new ArrayList<>();
+
+        // DTO LIST로 만들기
+        for(Comment c: commentList){
+            Comment.DAO commentFetcher = new Comment.DAO();
+            commentFetcher.setId(c.getId());
+            commentFetcher.setComment(c.getComment());
+            returnComments.add(commentFetcher);
+        }
+
+         */
