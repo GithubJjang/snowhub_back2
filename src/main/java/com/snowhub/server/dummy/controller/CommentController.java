@@ -7,12 +7,22 @@ import com.snowhub.server.dummy.repository.ReplyRepo;
 import com.snowhub.server.dummy.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Slf4j
@@ -37,7 +47,7 @@ public class CommentController {
     @GetMapping("/board/reply/comment")
     public ResponseEntity<?> getComment(@RequestParam(name = "id")int replyId){
         // 이 부분에 대해서도 쿼리 2방 보내는 것 대신에 1방으로 수정이 가능하다
-        
+
         // Original버전
         Reply reply = replyRepo.findById(replyId).orElseThrow(
                 ()-> new NullPointerException("/board/reply/commment")

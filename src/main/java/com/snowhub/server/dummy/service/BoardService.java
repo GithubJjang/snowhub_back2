@@ -125,9 +125,9 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardWithReplies getSingleBoard(int boardId,int number){
+    public BoardWithReplies getSingleBoard(int boardId,int number)  {
         //BoardFetcher fetchBoard = boardService.getBoard(boardId);// 이거 안하면 Json으로 인해서 StackOverFlow 발생
-
+        log.info("2.getSingleBoard");
 
         // board를 1건으로 줄인 후, user와 join
         Board findBoard = queryFactory.selectFrom(board)
@@ -145,9 +145,11 @@ public class BoardService {
                 .createDate(findBoard.getCreateDate())
                 .build();
 
-        System.out.println("==========(1)");
+        //System.out.println("==========(1)");
+        log.info("3.get Reply at SingleBoard");
         List<Reply.DAO> getReplies = replyService.getReply(boardId);// 마찬가지이유.
-        System.out.println("==========(2)");
+        //System.out.println("==========(2)");
+
 
         // Board와 Reply를 동시에 반환을 한다.
         BoardWithReplies boardWithRepliesDTO = new BoardWithReplies();
@@ -157,6 +159,7 @@ public class BoardService {
         if(number==1){
             this.updateCount(boardId);
         }
+
 
         System.out.println("title: "+boardWithRepliesDTO.getBoardDTO().getTitle());
 

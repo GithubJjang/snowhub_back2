@@ -29,13 +29,24 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
         // OPTIONS 같은 경우 : true (Not Filtering)
         log.info("shouldNotFilter operated!!!");
 
+        /*
         if(request.getMethod().equals("OPTIONS")){
             log.info("Pre-flight request pass!");
             String excludePath = "/board/list";
             String path = request.getRequestURI();
             return path.startsWith(excludePath);
         }
-        return false;
+
+         */
+
+        String excludePath = "/logout";
+        String path = request.getRequestURI();
+        if(path.startsWith(excludePath)){
+            return true;
+        }
+
+        System.out.println(request.getRequestURI());
+        return false;// false를 해야 필터링을 하고, true는 다 보낸다.
 
     }
 

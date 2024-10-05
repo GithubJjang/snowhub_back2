@@ -4,7 +4,6 @@ import com.snowhub.server.dummy.config.SupplierConfig.CustomAccessDeniedHandler;
 import com.snowhub.server.dummy.filter.VerifyTokenFilter;
 import com.snowhub.server.dummy.service.security.CustomUserDetailsService;
 import com.snowhub.server.dummy.service.UserService;
-import com.snowhub.server.dummy.config.SupplierConfig.CustomAccessDeniedHandler;
 import jakarta.servlet.DispatcherType;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -60,7 +59,7 @@ public class SecurityConfig {
 
     @Bean WebSecurityCustomizer webSecurityCustomizer(){
         return web -> web.ignoring()
-                .requestMatchers("/auth/**")// swagger를 사용할 경우에만 모든 /**, 안하면 토큰 오류가 발생함.
+                .requestMatchers("/auth/**","/logout")// swagger를 사용할 경우에만 모든 /**, 안하면 토큰 오류가 발생함.
 
                 ;
     }

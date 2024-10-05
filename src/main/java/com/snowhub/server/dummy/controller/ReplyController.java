@@ -5,10 +5,11 @@ import com.snowhub.server.dummy.service.ReplyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
+@Slf4j
 @AllArgsConstructor
 @RestController
 @Tag(name = "댓글 관련 API", description = "/board/detail 이후, 사용자가 현재 보고있는 게시글에 대해서 댓글 작성/")
@@ -21,7 +22,7 @@ public class ReplyController {
     @Operation(summary = "댓글 작성하기", description = "/board/detail 이후, 사용자가 현재 보고있는 게시글에 대한 댓글을 작성/")
     @PostMapping("/board/reply")
     public ResponseEntity<?> getReply(@RequestBody ReplyParam replyParam){
-        return replyService.saveReply(replyParam);
+         log.info("1.board/reply"); return replyService.saveReply(replyParam);
     }
 
 }

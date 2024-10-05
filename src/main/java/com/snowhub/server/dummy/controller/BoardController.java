@@ -15,46 +15,32 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import static com.snowhub.server.dummy.model.QBoard.board;
 
 
 @Slf4j
-//@AllArgsConstructor <- JPAQueryFactory를 빈등록이 된 줄 알고 가져오려고 함. 그래서 어노테이션이 아닌 생성자 주입방식을 적용.
+@AllArgsConstructor // <- JPAQueryFactory를 빈등록이 된 줄 알고 가져오려고 함. 그래서 어노테이션이 아닌 생성자 주입방식을 적용.
 @RestController
 @Tag(name = "게시글 관련 API", description = "게시글 작성/현재 작성중인 게시글 임시저장 및 불러오기/전체게시글 불러오기/게시글 상세보기/")
 public class BoardController {
 
     // 생성자 주입 방식.
     private final BoardService boardService;
-    private final ReplyService replyService;
     private final TmpBoardService tmpBoardService;
 
-    private final BoardRepo boardRepo;
-
-    // Querydsl
-    private final EntityManager em;
-
-    public BoardController(BoardService boardService, ReplyService replyService, TmpBoardService tmpBoardService
-    ,EntityManager entityManager, BoardRepo boardRepo){
-        this.boardService=boardService;
-        this.replyService=replyService;
-        this.tmpBoardService=tmpBoardService;
-        this.em=entityManager;
-
-        this.boardRepo = boardRepo;
-    }
-
-    private JPAQueryFactory queryFactory;// final 잡으면 em을 파라미터로 넣을 수 없다.
-
-
-    //private BoardRepo boardRepo;
     @Operation(summary = "게시글 작성", description = "현재 게시글을 작성합니다.")
     @PostMapping("/board/write")
     public ResponseEntity<?> boardWrite(@Valid @RequestBody BoardParam boardDTO,
@@ -69,6 +55,7 @@ public class BoardController {
     @PostMapping("/board/tmp")
     public ResponseEntity<?> boardTmpSave(@RequestBody TmpBoardParam tmpBoardParam, HttpServletRequest request){
         // 임시저장을 하는데, 굳이 검사를 할 필요가 없다.
+        System.out.println("content:"+tmpBoardParam.getContent());
         return tmpBoardService.saveTmpBoard(tmpBoardParam,request);
 
     }
@@ -95,8 +82,9 @@ public class BoardController {
     @Operation(summary = "게시글 상세보기",description = "하나의 게시글을 선택하여, 자세한 내용을 불러옵니다.( 게시글+댓글 )")
     @GetMapping("/board/detail")
     public ResponseEntity<?> boardDetail(@RequestParam(name = "id") int boardId,
-                                         @RequestParam(name = "number")int number){
-
+                                         @RequestParam(name = "number")int number
+                                         ){
+        log.info("1./board/detail");
         return ResponseEntity.ok(boardService.getSingleBoard(boardId,number));// body T에는 board Entity가 들어가야.
     }
 
@@ -195,3 +183,41 @@ public class BoardController {
         }
 
 */
+
+/*
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserDetails userDetails = (UserDetails)principal;
+        String username = userDetails.getUsername();
+        String password = userDetails.getPassword();
+
+        System.out.println("user:"+username);
+        System.out.println("password:"+password);
+
+        /////
+        System.out.println("logout");
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserDetails userDetails = (UserDetails)principal;
+        String username = userDetails.getUsername();
+        String password = userDetails.getPassword();
+
+        System.out.println("user:"+username);
+        System.out.println("password:"+password);
+
+        SecurityContextLogoutHandler s = new SecurityContextLogoutHandler();
+        s.logout(request,response, SecurityContextHolder.getContext().getAuthentication());
+
+        System.out.println(1);
+        SecurityContextLogoutHandler s2 = new SecurityContextLogoutHandler();
+        s2.logout(request,response, SecurityContextHolder.getContext().getAuthentication());
+        System.out.println(2);
+        Object principal2 = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(SecurityContextHolder.getContext().getAuthentication()==null){
+            System.out.println("Principal Null");
+        }
+        UserDetails userDetails2 = (UserDetails)principal2;
+        String username2 = userDetails2.getUsername();
+        String password2 = userDetails2.getPassword();
+        System.out.println("Print");
+        System.out.println("user2:"+username2);
+        System.out.println("password2:"+password2);
+ */
