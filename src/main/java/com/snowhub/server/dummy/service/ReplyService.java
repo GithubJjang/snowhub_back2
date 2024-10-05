@@ -7,6 +7,7 @@ import com.snowhub.server.dummy.repository.BoardRepo;
 import com.snowhub.server.dummy.repository.ReplyRepo;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @AllArgsConstructor
 @Service
 public class ReplyService {
@@ -24,18 +26,20 @@ public class ReplyService {
     // 1. 댓글 등록
     @Transactional
     public ResponseEntity<?> saveReply(ReplyParam replyParam){
+
         // replyDTO 이용해서 Board 찾기 -> reply 인스턴스에 초기화 -> Reply 등록
         int boardId = Integer.parseInt(replyParam.getBoardId());
         Board board = boardRepo.findById(boardId).orElseThrow(
                 ()-> new RuntimeException("There is no ["+ replyParam.getBoardId()+"] Board" )
         );
 
+        log.info("2.saveReply");
         Reply reply = Reply.builder()
                 .reply(replyParam.getReply())
                 .board(board)
                 .build();
-
         replyRepo.save(reply);
+        log.info("3.save Reply successfully");
 
         return ResponseEntity.ok(HttpStatus.OK);
     }

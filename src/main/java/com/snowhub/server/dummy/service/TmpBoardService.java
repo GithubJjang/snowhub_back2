@@ -42,7 +42,7 @@ public class TmpBoardService {
 
         TmpBoard inputTmpBoard = new TmpBoard();
         inputTmpBoard.setTitle(tmpBoardParam.getTitle());
-        inputTmpBoard.setContent(inputTmpBoard.getContent());
+        inputTmpBoard.setContent(tmpBoardParam.getContent());
         inputTmpBoard.setCategory(tmpBoardParam.getCategory());
 
         TmpBoard TmpBoardFetch  = findUser.getTmpBoard(); // Dirty checking을 위해서, TmpBoard객체를 불러옴.
@@ -78,6 +78,5 @@ public class TmpBoardService {
         );// 혹시나 없는 사용자면 error 발생. 검증을 한번더?
 
         return findUser.getTmpBoard();
-
     }
 }
